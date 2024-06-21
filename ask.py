@@ -12,9 +12,13 @@ import textwrap
 from time import time
 import pickle
 
+# use relative path for the pickle file so code can be used anywhere
+dir_path = os.path.dirname(os.path.realpath(__file__))
+# Construct the path to the .env file
+env_path = os.path.join(dir_path, 'message_store.pkl')
+
 preferred_model = "gpt-3.5-turbo-0125"  # cheaper
 # preferred_model = "gpt" # more expensive
-message_store_path = "message_store.pkl"
 
 system_instructions = """
 You are a helpful IT admin. You are helping a new programmer.
