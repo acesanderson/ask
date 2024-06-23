@@ -195,6 +195,9 @@ if __name__ == '__main__':
 			message_store.append([time(), {'role': 'assistant', 'content': query_response}])
 			save_message_store(message_store)
 			sys.exit()
+		if sys.argv[1] == "last":
+			print(get_messages(message_store)[-1]['content'])
+			sys.exit()
 		input_prompt = " ".join(sys.argv[1:])
 		message_store.append([time(), {'role': 'user', 'content': input_prompt}])
 		query_response = query(get_messages(message_store))
