@@ -121,7 +121,7 @@ def query(messages):
 	"""
 	Very simple chat function; pass messages to the model and return the response.
 	"""
-	response = Model(preferred_model).chat(messages)
+	response = Model(preferred_model).query(messages)
 	return response
 
 def escalate(message_store):
