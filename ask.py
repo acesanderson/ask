@@ -17,7 +17,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 # Construct the path to the .env file
 message_store_path = os.path.join(dir_path, 'message_store.pkl')
 
-preferred_model = "gpt-3.5-turbo-0125"
+preferred_model = "gpt-4o-mini"
 
 frontline_worker = """
 You are a helpful IT admin. You are a frontline worker at your company.
