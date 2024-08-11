@@ -12,6 +12,8 @@ import textwrap
 from time import time
 import pickle
 import argparse
+from rich.console import Console
+from rich.markdown import Markdown
 
 # use relative path for the pickle file so code can be used anywhere
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -189,6 +191,17 @@ def load_message_store() -> list[list]:
 		message_store.append([time(), {"role": "system", "content": f"{system_instructions}\n============================\n{get_system_info()}\n============================\n"}])
 	return message_store
 
+def print_markdown(markdown_string: str):
+	"""
+	Prints formatted markdown to the console.
+	"""
+	console = Console(width=80)
+	# Create a Markdown object
+	border = "-" * 80
+	markdown_string = f"{border}\n{markdown_string}\n\n{border}"
+	md = Markdown(markdown_string)
+	console.print(md)
+
 if __name__ == "__main__":
 	# Load the message store
 	message_store: list[list] = load_message_store()	# what the admin sees
@@ -220,12 +233,12 @@ if __name__ == "__main__":
 	if args.escalate:								# escalate to the manager
 		message_store = escalate(message_store)
 		query_response = query(get_messages(message_store))
-		print(query_response)
+		print_markdown(query_response)
 		message_store.append([time(), {'role': 'assistant', 'content': query_response}])
 		save_message_store(message_store)
 		sys.exit()
 	if args.last:									# print the last message
-		print(get_messages(message_store)[-1]['content'])
+		print_markdown(get_messages(message_store)[-1]['content'])
 		sys.exit()
 	if args.history:								# print the last 10 messages backwards in time
 		history_string, history_dict = get_history(message_store)
@@ -234,7 +247,7 @@ if __name__ == "__main__":
 	if args.get:									# get a specific message 1-10
 		history_string, history_dict = get_history(message_store)
 		try:
-			print(history_dict[int(args.get)]['content'])
+			print_markdown(history_dict[int(args.get)]['content'])
 		except:
 			print("Message not found.")
 		sys.exit()
@@ -242,7 +255,7 @@ if __name__ == "__main__":
 		input_prompt = " ".join(args.prompt)
 		message_store.append([time(), {'role': 'user', 'content': input_prompt}])
 		query_response = query(get_messages(message_store))
-		print(query_response)
+		print_markdown(query_response)
 		message_store.append([time(), {'role': 'assistant', 'content': query_response}])
 		save_message_store(message_store)
 	else:
