@@ -4,13 +4,14 @@ Useful for me since I don't know Linux very well.
 """
 
 from Chain import Chain, Model, Prompt
-import sys
 import platform
 import subprocess
+import sys
 import os
 import textwrap
 from time import time
 import pickle
+import argparse
 
 # use relative path for the pickle file so code can be used anywhere
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -145,6 +146,21 @@ def get_messages(message_store: list[list]) -> list[dict]:
 	messages = [s[1] for s in message_store]
 	return messages
 
+def get_history(message_store: list[list]) -> tuple[str, dict]:
+	"""
+	Takes the message store, grabs all the assistant messages, and returns a tuple of:
+	- a formatted string with the # of the messages (going backwards in time with 1 being the latest) with the first 100 characters of each message, for the last ten messages.
+	- a dict with key as the message number and value as the full message, this is if the user is retrieving a specific message.
+	"""
+	answers = [s[1] for s in message_store if s[1]['role'] == 'assistant']
+	history_string = ""
+	history_dict = {}
+	for index, answer in enumerate(answers[::-1][:10]):
+		answer_string = repr(answer['content'])[:100]
+		history_string += f"{index}:\t{answer_string}\n"
+		history_dict[index] = answer
+	return history_string, history_dict
+
 def save_message_store(message_store: list[list]):
 	"""
 	Saves the message to a file.
@@ -173,36 +189,67 @@ def load_message_store() -> list[list]:
 		message_store.append([time(), {"role": "system", "content": f"{system_instructions}\n============================\n{get_system_info()}\n============================\n"}])
 	return message_store
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+	# Load the message store
 	message_store: list[list] = load_message_store()	# what the admin sees
+	# Check if the last message is a system, as part of the escalate flag.
 	if message_store[-1][1]['role'] == "system":
 		if message_store[-1][1]['content'].startswith("You are now the manager"):
 			preferred_model = "gpt-4o"
-	if len(sys.argv) > 1:
-		if sys.argv[1] == "system_info":
-			print(get_system_info())
-			sys.exit(0)
-		if sys.argv[1] == "messages":					# for debugging
-			print(get_messages(message_store))
-			sys.exit(0)
-		if sys.argv[1] == "clear":						# to wipe memory
-			save_message_store([])
-			sys.exit()
-		if sys.argv[1] == "escalate":
-			message_store = escalate(message_store)
-			query_response = query(get_messages(message_store))
-			print(query_response)
-			message_store.append([time(), {'role': 'assistant', 'content': query_response}])
-			save_message_store(message_store)
-			sys.exit()
-		if sys.argv[1] == "last":
-			print(get_messages(message_store)[-1]['content'])
-			sys.exit()
-		input_prompt = " ".join(sys.argv[1:])
+	# Our argparse code:
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-s", "-system", dest="system", action="store_true", help="Print system information.")
+	parser.add_argument("-m", "-messages", dest="messages", action="store_true", help="Print messages; this is for debugging.")
+	parser.add_argument("-c", "-clear", dest="clear", action="store_true", help="Clear messages.")
+	parser.add_argument("-e", "-escalate", dest="escalate", action="store_true", help="Talk to the manager.")
+	parser.add_argument("-l", "-last", dest="last", action="store_true", help="Print the last message.")
+	parser.add_argument("-hi", "-history", dest="history", action="store_true", help="Print the last 10 messages.")
+	parser.add_argument("-g", "-get", dest="get", type=str, help="Get a specific answer from the history.")
+	parser.add_argument("prompt", nargs="*", help="Ask IT a question.")
+	# parser.add_argument("-t", "-tutorialize", dest="tutorialize", type=str, help="Generate a tutorial for a given topic.")
+	args = parser.parse_args()
+	if args.system:									# print system information
+		print(get_system_info())
+		sys.exit(0)
+	if args.messages:								# for debugging
+		print(get_messages(message_store))
+		sys.exit(0)
+	if args.clear:									# to wipe memory
+		save_message_store([])
+		sys.exit()
+	if args.escalate:								# escalate to the manager
+		message_store = escalate(message_store)
+		query_response = query(get_messages(message_store))
+		print(query_response)
+		message_store.append([time(), {'role': 'assistant', 'content': query_response}])
+		save_message_store(message_store)
+		sys.exit()
+	if args.last:									# print the last message
+		print(get_messages(message_store)[-1]['content'])
+		sys.exit()
+	if args.history:								# print the last 10 messages backwards in time
+		history_string, history_dict = get_history(message_store)
+		print(history_string)
+		sys.exit()
+	if args.get:									# get a specific message 1-10
+		history_string, history_dict = get_history(message_store)
+		try:
+			print(history_dict[int(args.get)]['content'])
+		except:
+			print("Message not found.")
+		sys.exit()
+	if args.prompt:									# ask the chatbot a question
+		input_prompt = " ".join(args.prompt)
 		message_store.append([time(), {'role': 'user', 'content': input_prompt}])
 		query_response = query(get_messages(message_store))
 		print(query_response)
 		message_store.append([time(), {'role': 'assistant', 'content': query_response}])
 		save_message_store(message_store)
 	else:
-		print("Either type a prompt, or type 'system_info' to get system information.")
+		print("Either type a prompt, or type -h to see the options.")
+
+	
+	
+
+
+
