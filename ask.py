@@ -218,6 +218,7 @@ if __name__ == "__main__":
 	parser.add_argument("-l", "-last", dest="last", action="store_true", help="Print the last message.")
 	parser.add_argument("-hi", "-history", dest="history", action="store_true", help="Print the last 10 messages.")
 	parser.add_argument("-g", "-get", dest="get", type=str, help="Get a specific answer from the history.")
+	parser.add_argument("-r", "-raw", dest="raw", action="store_true", help="Output raw markdown.")
 	parser.add_argument("prompt", nargs="*", help="Ask IT a question.")
 	# parser.add_argument("-t", "-tutorialize", dest="tutorialize", type=str, help="Generate a tutorial for a given topic.")
 	args = parser.parse_args()
@@ -238,7 +239,10 @@ if __name__ == "__main__":
 		save_message_store(message_store)
 		sys.exit()
 	if args.last:									# print the last message
-		print_markdown(get_messages(message_store)[-1]['content'])
+		if args.raw:
+			print(get_messages(message_store)[-1]['content'])
+		else:
+			print_markdown(get_messages(message_store)[-1]['content'])
 		sys.exit()
 	if args.history:								# print the last 10 messages backwards in time
 		history_string, history_dict = get_history(message_store)
@@ -255,7 +259,10 @@ if __name__ == "__main__":
 		input_prompt = " ".join(args.prompt)
 		message_store.append([time(), {'role': 'user', 'content': input_prompt}])
 		query_response = query(get_messages(message_store))
-		print_markdown(query_response)
+		if args.raw:
+			print(query_response)
+		else:
+			print_markdown(query_response)
 		message_store.append([time(), {'role': 'assistant', 'content': query_response}])
 		save_message_store(message_store)
 	else:
