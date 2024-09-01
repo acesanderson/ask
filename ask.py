@@ -180,7 +180,7 @@ def load_message_store() -> list[list]:
 	try:
 		with open(message_store_path, "rb") as f:
 			message_store = pickle.load(f)
-	except FileNotFoundError:
+	except:
 		print(f"Can't find pickle: {message_store_path}.")
 		message_store = []
 	# for each message, if time is more than 1 hour, remove it
