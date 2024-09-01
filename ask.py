@@ -251,7 +251,10 @@ if __name__ == "__main__":
 	if args.get:									# get a specific message 1-10
 		history_string, history_dict = get_history(message_store)
 		try:
-			print_markdown(history_dict[int(args.get)]['content'])
+			if args.raw:
+				print(history_dict[int(args.get)]['content'])
+			else:
+				print_markdown(history_dict[int(args.get)]['content'])
 		except:
 			print("Message not found.")
 		sys.exit()
