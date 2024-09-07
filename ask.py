@@ -203,6 +203,9 @@ def print_markdown(markdown_string: str):
 	console.print(md)
 
 if __name__ == "__main__":
+	# Handle null case first; go to help
+	if len(sys.argv) == 1:                                 
+		sys.argv.append('-h')
 	# Load the message store
 	message_store: list[list] = load_message_store()	# what the admin sees
 	# Check if the last message is a system, as part of the escalate flag.
@@ -268,11 +271,3 @@ if __name__ == "__main__":
 			print_markdown(query_response)
 		message_store.append([time(), {'role': 'assistant', 'content': query_response}])
 		save_message_store(message_store)
-	else:
-		print("Either type a prompt, or type -h to see the options.")
-
-	
-	
-
-
-
