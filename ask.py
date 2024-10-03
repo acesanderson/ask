@@ -3,17 +3,23 @@ Simple command line interface for asking questions to the chatbot.
 Useful for me since I don't know Linux very well.
 """
 
-from Chain import Chain, Model, Prompt
-import platform
-import subprocess
-import sys
-import os
-import textwrap
-from time import time
-import pickle
-import argparse
+# Imports can take a while, so we'll give the user a spinner.
+# -----------------------------------------------------------------
+
 from rich.console import Console
-from rich.markdown import Markdown
+console = Console(width=100) # for spinner
+
+with console.status("[bold green]Loading...", spinner="dots"):
+	from Chain import Model
+	import platform
+	import subprocess
+	import sys
+	import os
+	import textwrap
+	from time import time
+	import pickle
+	import argparse
+	from rich.markdown import Markdown
 
 # use relative path for the pickle file so code can be used anywhere
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -195,17 +201,13 @@ def print_markdown(markdown_string: str):
 	"""
 	Prints formatted markdown to the console.
 	"""
-	console = Console(width=80)
 	# Create a Markdown object
-	border = "-" * 80
+	border = "-" * 100
 	markdown_string = f"{border}\n{markdown_string}\n\n{border}"
 	md = Markdown(markdown_string)
 	console.print(md)
 
 if __name__ == "__main__":
-	# Handle null case first; go to help
-	if len(sys.argv) == 1:                                 
-		sys.argv.append('-h')
 	# Load the message store
 	message_store: list[list] = load_message_store()	# what the admin sees
 	# Check if the last message is a system, as part of the escalate flag.
@@ -262,12 +264,13 @@ if __name__ == "__main__":
 			print("Message not found.")
 		sys.exit()
 	if args.prompt:									# ask the chatbot a question
-		input_prompt = " ".join(args.prompt)
-		message_store.append([time(), {'role': 'user', 'content': input_prompt}])
-		query_response = query(get_messages(message_store))
-		if args.raw:
-			print(query_response)
-		else:
-			print_markdown(query_response)
-		message_store.append([time(), {'role': 'assistant', 'content': query_response}])
-		save_message_store(message_store)
+		with console.status("[bold green]Query...", spinner="dots"):
+			input_prompt = " ".join(args.prompt)
+			message_store.append([time(), {'role': 'user', 'content': input_prompt}])
+			query_response = query(get_messages(message_store))
+			if args.raw:
+				print(query_response)
+			else:
+				print_markdown(query_response)
+			message_store.append([time(), {'role': 'assistant', 'content': query_response}])
+			save_message_store(message_store)
