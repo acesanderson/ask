@@ -188,7 +188,7 @@ def load_message_store() -> list[list]:
 		with open(message_store_path, "rb") as f:
 			message_store = pickle.load(f)
 	except:
-		print(f"Can't find pickle: {message_store_path}.")
+		print(f"First time install!")
 		message_store = []
 	# for each message, if time is more than 1 hour, remove it
 	current_time = time()
