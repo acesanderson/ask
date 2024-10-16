@@ -225,9 +225,12 @@ if __name__ == "__main__":
 	parser.add_argument("-hi", "-history", dest="history", action="store_true", help="Print the last 10 messages.")
 	parser.add_argument("-g", "-get", dest="get", type=str, help="Get a specific answer from the history.")
 	parser.add_argument("-r", "-raw", dest="raw", action="store_true", help="Output raw markdown.")
+	parser.add_argument("-o", "-ollama", dest="ollama", action="store_true", help="Use local model.")
 	parser.add_argument("prompt", nargs="*", help="Ask IT a question.")
 	# parser.add_argument("-t", "-tutorialize", dest="tutorialize", type=str, help="Generate a tutorial for a given topic.")
 	args = parser.parse_args()
+	if args.ollama:
+		preferred_model = "llama3.1:latest"
 	if args.system:									# print system information
 		print(get_system_info())
 		sys.exit(0)
