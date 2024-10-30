@@ -12,7 +12,6 @@ console = Console(width=100)  # for spinner
 
 with console.status("[green]Loading...", spinner="dots"):
     from Chain import Chain, Model, MessageStore, create_system_message
-    from Leviathan import print_markdown
     import platform
     import subprocess
     import sys
@@ -28,7 +27,12 @@ with console.status("[green]Loading...", spinner="dots"):
 dir_path = Path(__file__).parent
 history_file_path = dir_path / ".ask_history.pkl"
 log_file_path = dir_path / ".ask_log.txt"
-messagestore = MessageStore(console = console, history_file = history_file_path, log_file = log_file_path, pruning = True)
+messagestore = MessageStore(
+    console=console,
+    history_file=history_file_path,
+    log_file=log_file_path,
+    pruning=True,
+)
 Chain._message_store = messagestore
 preferred_model = "claude-3-haiku-20240307"
 
@@ -60,6 +64,7 @@ Here are details about the user's hardware, OS, and software:
 
 # Our functions
 # -----------------------------------------------------------------
+
 
 def get_system_info():
     os_info = platform.system() + " " + platform.release()
@@ -108,6 +113,7 @@ Terminal: {terminal}
 """.strip()
     return system_info
 
+
 def read_file_content(file_path):
     """
     Reads the content of a file and returns it as a string.
@@ -133,6 +139,7 @@ def print_markdown(string_to_display: str, console: Console | None = None):
     markdown_string = f"{border}\n{string_to_display}\n\n{border}"
     md = Markdown(markdown_string)
     console.print(md)
+
 
 if __name__ == "__main__":
     # Load message store history.
@@ -170,13 +177,9 @@ if __name__ == "__main__":
         "--clear",
         action="store_true",
         help="Clear the message history.",
-        )
-    parser.add_argument(
-        "-r", "--raw", action="store_true", help="Output raw markdown."
     )
-    parser.add_argument(
-        "-o", "--ollama", action="store_true", help="Use local model."
-    )
+    parser.add_argument("-r", "--raw", action="store_true", help="Output raw markdown.")
+    parser.add_argument("-o", "--ollama", action="store_true", help="Use local model.")
     parser.add_argument("prompt", nargs="*", help="Ask IT a question.")
     # parser.add_argument("-t", "-tutorialize", dest="tutorialize", type=str, help="Generate a tutorial for a given topic.")
     args = parser.parse_args()
@@ -193,7 +196,7 @@ if __name__ == "__main__":
         if args.raw:
             print(last_message.content)
         else:
-            print_markdown(last_message.content, console = console)
+            print_markdown(last_message.content, console=console)
         sys.exit()
     if args.history:  # print the last 10 messages backwards in time
         messagestore.view_history()
@@ -204,32 +207,36 @@ if __name__ == "__main__":
             if args.raw:
                 print(retrieved_message.content)
             else:
-                print_markdown(retrieved_message.content, console = console)
+                print_markdown(retrieved_message.content, console=console)
         except:
             print("Message not found.")
         sys.exit()
     # Construct the prompt from a combination of stdin (if it was in fact piped into the script) and prompt (if in fact there was a prompt). If both are None, it will be a single newline, so strip will give us an empty string (i.e. False).
-    combined_prompt = "\n".join([
-        " ".join(args.prompt) if args.prompt is not None else "",
-        context if context is not None else ""
-        ])
-    # 
+    combined_prompt = "\n".join(
+        [
+            " ".join(args.prompt) if args.prompt is not None else "",
+            context if context is not None else "",
+        ]
+    )
+    #
     if combined_prompt.strip():  # ask the chatbot a question
         with console.status("[green]Query...", spinner="dots"):
             # Check if we need system prompt.
             if messagestore.messages:
                 if messagestore.messages[0].role != "system":
                     system_info = get_system_info()
-                    system_message = create_system_message(system_prompt = system_prompt_string, input_variables = {"system_info": system_info})
+                    system_message = create_system_message(
+                        system_prompt=system_prompt_string,
+                        input_variables={"system_info": system_info},
+                    )
                     messagestore.messages = system_message + messagestore.messages
             # Initialize user prompt
-            messagestore.add_new(role = "user", content = combined_prompt)
+            messagestore.add_new(role="user", content=combined_prompt)
             # Run our query with our messages.
             model = Model(preferred_model)
             response = model.query(messagestore.messages)
-            messagestore.add_new(role = "assistant", content = response)
+            messagestore.add_new(role="assistant", content=response)
             if args.raw:
                 print(response)
             else:
-                print_markdown(response, console = console)
-
+                print_markdown(response, console=console)
