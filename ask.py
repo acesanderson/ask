@@ -180,11 +180,19 @@ if __name__ == "__main__":
     )
     parser.add_argument("-r", "--raw", action="store_true", help="Output raw markdown.")
     parser.add_argument("-o", "--ollama", action="store_true", help="Use local model.")
+    parser.add_argument(
+        "-e",
+        "--escalate",
+        action="store_true",
+        help="Speak to the manager (3.5 sonnet).",
+    )
     parser.add_argument("prompt", nargs="*", help="Ask IT a question.")
     # parser.add_argument("-t", "-tutorialize", dest="tutorialize", type=str, help="Generate a tutorial for a given topic.")
     args = parser.parse_args()
     if args.ollama:
         preferred_model = "llama3.1:latest"
+    if args.escalate:  # default is haiku, choose this is you need oomph
+        preferred_model = "claude-3-5-sonnet-20241022"
     if args.clear:
         messagestore.clear()
         sys.exit()
