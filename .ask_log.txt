@@ -1,51 +1,82 @@
-[1;32m──────────────────────────────────── [0mMessage[1;32m ────────────────────────────────────[0m
+[1;32m───────────────────────────────────── [0mMessage[1;32m ─────────────────────────────────────[0m
 [1;36massistant:[0m
-[34mTo work with sessions in tmux, you can use the following commands:[0m
+[34mHere's a minimal example to create a tabular model with PyTorch using two columns [0m
+[34mto predict target values:[0m
 
-[1;34m1[0m[34m. **Create a new session:**[0m
-[34m   ```[0m
-[34m   tmux new -s session_name[0m
-[34m   ```[0m
-[34m   This will create a new tmux session with the specified name.[0m
+[34m```python[0m
+[34mimport torch[0m
+[34mimport torch.nn as nn[0m
+[34mfrom torch.utils.data import Dataset, DataLoader[0m
+[34mimport pandas as pd[0m
+[34mfrom sklearn.model_selection import train_test_split[0m
+[34mfrom sklearn.preprocessing import StandardScaler[0m
 
-[1;34m2[0m[34m. **Attach to an existing session:**[0m
-[34m   ```[0m
-[34m   tmux attach -t session_name[0m
-[34m   ```[0m
-[34m   This will attach to the tmux session with the specified name.[0m
+[34m# Assume your data is in a pandas DataFrame called [0m[34m'df'[0m
+[34m# with columns [0m[34m'feature1'[0m[34m, [0m[34m'feature2'[0m[34m, and [0m[34m'target'[0m
 
-[1;34m3[0m[34m. **List all available sessions:**[0m
-[34m   ```[0m
-[34m   tmux ls[0m
-[34m   ```[0m
-[34m   This will list all the currently running tmux sessions.[0m
+[34m# [0m[1;34m1[0m[34m. Prepare the data[0m
+[34mscaler = [0m[1;34mStandardScaler[0m[1;34m([0m[1;34m)[0m
+[34mX = [0m[1;34mscaler.fit_transform[0m[1;34m([0m[34mdf[0m[1;34m[[0m[1;34m[[0m[34m'feature1'[0m[34m, [0m[34m'feature2'[0m[1;34m][0m[1;34m][0m[1;34m)[0m
+[34my = df[0m[1;34m[[0m[34m'target'[0m[1;34m][0m[34m.values[0m
 
-[1;34m4[0m[34m. **Switch between sessions:**[0m
-[34m   ```[0m
-[34m   tmux switch -t session_name[0m
-[34m   ```[0m
-[34m   This will switch to the tmux session with the specified name.[0m
+[34mX_train, X_test, y_train, y_test = [0m[1;34mtrain_test_split[0m[1;34m([0m[34mX, y, [0m[34mtest_size[0m[34m=[0m[1;34m0[0m[1;34m.2[0m[1;34m)[0m
 
-[1;34m5[0m[34m. **Detach from the current session:**[0m
-[34m   ```[0m
-[34m   tmux detach[0m
-[34m   ```[0m
-[34m   This will detach from the current tmux session, leaving it running in the [0m
-[34mbackground.[0m
+[34m# [0m[1;34m2[0m[34m. Create Dataset[0m
+[34mclass [0m[1;34mTabularDataset[0m[1;34m([0m[34mDataset[0m[1;34m)[0m[34m:[0m
+[34m    def [0m[1;34m__init__[0m[1;34m([0m[34mself, X, y[0m[1;34m)[0m[34m:[0m
+[34m        self.X = [0m[1;34mtorch.FloatTensor[0m[1;34m([0m[34mX[0m[1;34m)[0m
+[34m        self.y = [0m[1;34mtorch.FloatTensor[0m[1;34m([0m[34my[0m[1;34m)[0m
+[34m        [0m
+[34m    def [0m[1;34m__len__[0m[1;34m([0m[34mself[0m[1;34m)[0m[34m:[0m
+[34m        return [0m[1;34mlen[0m[1;34m([0m[34mself.X[0m[1;34m)[0m
+[34m    [0m
+[34m    def [0m[1;34m__getitem__[0m[1;34m([0m[34mself, idx[0m[1;34m)[0m[34m:[0m
+[34m        return self.X[0m[34m, self.y[0m
 
-[1;34m6[0m[34m. **Kill a session:**[0m
-[34m   ```[0m
-[34m   tmux kill-session -t session_name[0m
-[34m   ```[0m
-[34m   This will kill the tmux session with the specified name.[0m
+[34m# [0m[1;34m3[0m[34m. Create Model[0m
+[34mclass [0m[1;34mTabularModel[0m[1;34m([0m[34mnn.Module[0m[1;34m)[0m[34m:[0m
+[34m    def [0m[1;34m__init__[0m[1;34m([0m[34mself[0m[1;34m)[0m[34m:[0m
+[34m        [0m[1;34msuper[0m[1;34m([0m[1;34m)[0m[1;34m.__init__[0m[1;34m([0m[1;34m)[0m
+[34m        self.layers = [0m[1;34mnn.Sequential[0m[1;34m([0m
+[34m            [0m[1;34mnn.Linear[0m[1;34m([0m[1;34m2[0m[34m, [0m[1;34m64[0m[1;34m)[0m[34m,[0m
+[34m            [0m[1;34mnn.ReLU[0m[1;34m([0m[1;34m)[0m[34m,[0m
+[34m            [0m[1;34mnn.Linear[0m[1;34m([0m[1;34m64[0m[34m, [0m[1;34m32[0m[1;34m)[0m[34m,[0m
+[34m            [0m[1;34mnn.ReLU[0m[1;34m([0m[1;34m)[0m[34m,[0m
+[34m            [0m[1;34mnn.Linear[0m[1;34m([0m[1;34m32[0m[34m, [0m[1;34m1[0m[1;34m)[0m
+[34m        [0m[1;34m)[0m
+[34m    [0m
+[34m    def [0m[1;34mforward[0m[1;34m([0m[34mself, x[0m[1;34m)[0m[34m:[0m
+[34m        return [0m[1;34mself.layers[0m[1;34m([0m[34mx[0m[1;34m)[0m
 
-[1;34m7[0m[34m. **Rename a session:**[0m
-[34m   ```[0m
-[34m   tmux rename-session -t old_name new_name[0m
-[34m   ```[0m
-[34m   This will rename the tmux session from [0m[34m"old_name"[0m[34m to [0m[34m"new_name"[0m[34m.[0m
+[34m# [0m[1;34m4[0m[34m. Training setup[0m
+[34mtrain_dataset = [0m[1;34mTabularDataset[0m[1;34m([0m[34mX_train, y_train[0m[1;34m)[0m
+[34mtrain_loader = [0m[1;34mDataLoader[0m[1;34m([0m[34mtrain_dataset, [0m[34mbatch_size[0m[34m=[0m[1;34m32[0m[34m, [0m[34mshuffle[0m[34m=[0m[3;34mTrue[0m[1;34m)[0m
 
-[34mThese are the basic commands to work with sessions in tmux. Tmux is a powerful [0m
-[34mtool that allows you to manage multiple terminal sessions and windows within a [0m
-[34msingle terminal, which can be especially useful for development and remote work.[0m
+[34mmodel = [0m[1;34mTabularModel[0m[1;34m([0m[1;34m)[0m
+[34mcriterion = [0m[1;34mnn.MSELoss[0m[1;34m([0m[1;34m)[0m
+[34moptimizer = [0m[1;34mtorch.optim.Adam[0m[1;34m([0m[1;34mmodel.parameters[0m[1;34m([0m[1;34m)[0m[34m, [0m[34mlr[0m[34m=[0m[1;34m0[0m[1;34m.001[0m[1;34m)[0m
+
+[34m# [0m[1;34m5[0m[34m. Training loop[0m
+[34mepochs = [0m[1;34m100[0m
+[34mfor epoch in [0m[1;34mrange[0m[1;34m([0m[34mepochs[0m[1;34m)[0m[34m:[0m
+[34m    [0m[1;34mmodel.train[0m[1;34m([0m[1;34m)[0m
+[34m    for X_batch, y_batch in train_loader:[0m
+[34m        [0m[1;34moptimizer.zero_grad[0m[1;34m([0m[1;34m)[0m
+[34m        y_pred = [0m[1;34mmodel[0m[1;34m([0m[34mX_batch[0m[1;34m)[0m
+[34m        loss = [0m[1;34mcriterion[0m[1;34m([0m[34my_pred, [0m[1;34my_batch.unsqueeze[0m[1;34m([0m[1;34m1[0m[1;34m)[0m[1;34m)[0m
+[34m        [0m[1;34mloss.backward[0m[1;34m([0m[1;34m)[0m
+[34m        [0m[1;34moptimizer.step[0m[1;34m([0m[1;34m)[0m
+[34m    [0m
+[34m    if epoch % [0m[1;34m10[0m[34m == [0m[1;34m0[0m[34m:[0m
+[34m        [0m[1;34mprint[0m[1;34m([0m[34mf'Epoch [0m[1;34m{[0m[34mepoch[0m[1;34m}[0m[34m, Loss: [0m[1;34m{[0m[1;34mloss.item[0m[1;34m([0m[1;34m)[0m[34m:.4f[0m[1;34m}[0m[34m'[0m[1;34m)[0m
+
+[34m# [0m[1;34m6[0m[34m. Prediction[0m
+[1;34mmodel.eval[0m[1;34m([0m[1;34m)[0m
+[34mwith [0m[1;34mtorch.no_grad[0m[1;34m([0m[1;34m)[0m[34m:[0m
+[34m    X_test_tensor = [0m[1;34mtorch.FloatTensor[0m[1;34m([0m[34mX_test[0m[1;34m)[0m
+[34m    predictions = [0m[1;34mmodel[0m[1;34m([0m[34mX_test_tensor[0m[1;34m)[0m
+[34m```[0m
+
+[34mThis code assumes your target variable is numerical. If you have a classification [0m
+[34mproblem, adjust the loss function and final layer accordingly.[0m
 
