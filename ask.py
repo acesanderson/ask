@@ -33,7 +33,7 @@ messagestore = MessageStore(
     pruning=True,
 )
 Chain._message_store = messagestore
-preferred_model = "claude-3-haiku-20240307"
+preferred_model = "haiku"
 
 # Our prompts
 # -----------------------------------------------------------------
