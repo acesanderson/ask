@@ -33,7 +33,6 @@ messagestore = MessageStore(
     pruning=True,
 )
 Chain._message_store = messagestore
-preferred_model = "haiku"
 
 # Our prompts
 # -----------------------------------------------------------------
@@ -206,7 +205,12 @@ def generate_script_output(script_file: str) -> str:
     return output
 
 
-if __name__ == "__main__":
+# Main
+# -----------------------------------------------------------------
+
+
+def main():
+    preferred_model = "haiku"
     # Load message store history.
     messagestore.load()
     # Grab stdin in it is piped in
@@ -354,3 +358,7 @@ if __name__ == "__main__":
                 print(response)
             else:
                 print_markdown(response, console=console)
+
+
+if __name__ == "__main__":
+    main()
