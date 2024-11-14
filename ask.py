@@ -210,7 +210,7 @@ def generate_script_output(script_file: str) -> str:
 
 
 def main():
-    preferred_model = "haiku"
+    preferred_model = "gpt-mini"
     # Load message store history.
     messagestore.load()
     # Grab stdin in it is piped in
@@ -255,6 +255,7 @@ def main():
         action="store_true",
         help="Speak to the manager (3.5 sonnet).",
     )
+    parser.add_argument("-m", "--model", type=str, help="Specify a model.")
     parser.add_argument("prompt", nargs="*", help="Ask IT a question.")
     parser.add_argument("-d", "--debug", nargs="+", help="Debug mode.")
     parser.add_argument(
@@ -266,6 +267,13 @@ def main():
     args = parser.parse_args()
     if args.ollama:
         preferred_model = "llama3.1:latest"
+    if args.model:
+        try:
+            Model(args.model)
+            preferred_model = args.model
+        except:
+            print(f"Model not recognized: {args.model}.")
+            sys.exit()
     if args.escalate:  # default is haiku, choose this is you need oomph
         preferred_model = "claude-3-5-sonnet-20241022"
     if args.clear:
