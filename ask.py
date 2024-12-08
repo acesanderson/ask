@@ -11,7 +11,7 @@ from rich.console import Console
 console = Console(width=100)  # for spinner
 
 with console.status("[green]Loading...", spinner="dots"):
-    from Chain import Chain, Model, MessageStore, Prompt, create_system_message
+    from Chain import MessageStore
     import platform
     import subprocess
     import sys
@@ -32,7 +32,6 @@ messagestore = MessageStore(
     log_file=log_file_path,
     pruning=True,
 )
-Chain._message_store = messagestore
 
 # Our prompts
 # -----------------------------------------------------------------
@@ -92,8 +91,18 @@ And here is the output of the first script that they are trying to debug:
 </script_output>
 """
 
+
 # Our functions
 # -----------------------------------------------------------------
+def load_Chain():
+    """
+    Lazy load the heavier elements of Chain package only if user has a question/debug.
+    """
+    global messagestore
+    from Chain import Chain, Model, Prompt, create_system_message
+
+    Chain._message_store = messagestore
+    return Chain, Model, Prompt, create_system_message
 
 
 def get_system_info():
@@ -220,6 +229,7 @@ def main():
         context = ""
     # Our argparse code:
     parser = argparse.ArgumentParser()
+    # Messagestore and other light queries -- no need for LLM interactions.
     parser.add_argument(
         "-s",
         "--system",
@@ -248,6 +258,7 @@ def main():
         help="Clear the message history.",
     )
     parser.add_argument("-r", "--raw", action="store_true", help="Output raw markdown.")
+    # LLM options -- this will lazy load the Chain package.
     parser.add_argument("-o", "--ollama", action="store_true", help="Use local model.")
     parser.add_argument(
         "-e",
@@ -265,6 +276,8 @@ def main():
     )
     # parser.add_argument("-t", "-tutorialize", dest="tutorialize", type=str, help="Generate a tutorial for a given topic.")
     args = parser.parse_args()
+    if args.ollama or args.model or args.debug or args.prompt:
+        Chain, Model, Prompt, create_system_message = load_Chain()
     if args.ollama:
         preferred_model = "llama3.1:latest"
     if args.model:
