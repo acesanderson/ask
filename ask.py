@@ -219,7 +219,7 @@ def generate_script_output(script_file: str) -> str:
 
 
 def main():
-    preferred_model = "claude"
+    preferred_model = "deepseek"
     # Load message store history.
     messagestore.load()
     # Grab stdin in it is piped in
@@ -288,7 +288,7 @@ def main():
             print(f"Model not recognized: {args.model}.")
             sys.exit()
     if args.escalate:  # default is haiku, choose this is you need oomph
-        preferred_model = "claude"
+        preferred_model = "deepseek"
     if args.clear:
         messagestore.clear()
         sys.exit()
