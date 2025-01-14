@@ -17,7 +17,6 @@ with console.status("[green]Loading...", spinner="dots"):
     import sys
     import os
     import argparse
-    from rich.markdown import Markdown
     from pathlib import Path
 
 # Constants + Message Store initialization
@@ -179,6 +178,8 @@ def print_markdown(string_to_display: str, console: Console | None = None):
     """
     Prints formatted markdown to the console.
     """
+    from rich.markdown import Markdown
+
     if not console:
         console = Console(width=80)
     # Create a Markdown object
