@@ -26,6 +26,7 @@ with console.status("[green]Loading...", spinner="dots"):
 dir_path = Path(__file__).parent
 history_file_path = dir_path / ".ask_history.pkl"
 log_file_path = dir_path / ".ask_log.txt"
+cache_path = dir_path / ".cache.db"
 messagestore = MessageStore(
     console=console,
     history_file=history_file_path,
@@ -99,9 +100,13 @@ def load_Chain():
     Lazy load the heavier elements of Chain package only if user has a question/debug.
     """
     global messagestore
-    from Chain import Chain, Model, Prompt, create_system_message
+    global Chain, Model, Prompt, create_system_message, ChainCache
+    from Chain import Chain, Model, Prompt, create_system_message, ChainCache
 
+    # Assigning our singletons: Messagestore to Chain
     Chain._message_store = messagestore
+    # Chain Cache to Model
+    Model._chain_cache = ChainCache(str(cache_path))
     return Chain, Model, Prompt, create_system_message
 
 
