@@ -294,7 +294,7 @@ def main():
             print(f"Model not recognized: {args.model}.")
             sys.exit()
     if args.escalate:  # default is haiku, choose this is you need oomph
-        preferred_model = "deepseek"
+        preferred_model = "gemini"
     if args.clear:
         messagestore.clear()
         sys.exit()

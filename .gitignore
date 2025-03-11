@@ -4,3 +4,4 @@ __pycache__/
 .ask_log.txt
 .ask_history.pkl
 *.db
+.DS_Store
