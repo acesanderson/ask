@@ -225,7 +225,7 @@ def generate_script_output(script_file: str) -> str:
 
 
 def main():
-    preferred_model = "deepseek"
+    preferred_model = "claude"
     # Load message store history.
     messagestore.load()
     # Grab stdin in it is piped in

@@ -3,3 +3,4 @@ Ask.egg-info/
 __pycache__/
 .ask_log.txt
 .ask_history.pkl
+*.db
