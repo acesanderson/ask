@@ -225,7 +225,8 @@ def generate_script_output(script_file: str) -> str:
 
 
 def main():
-    preferred_model = "claude"
+    # preferred_model = "claude"
+    preferred_model = "gemini2.5"
     # Load message store history.
     messagestore.load()
     # Grab stdin in it is piped in
