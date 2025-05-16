@@ -226,7 +226,8 @@ def generate_script_output(script_file: str) -> str:
 
 def main():
     # preferred_model = "claude"
-    preferred_model = "gemini2.5"
+    # preferred_model = "gemini2.5"
+    preferred_model = "haiku"
     # Load message store history.
     messagestore.load()
     # Grab stdin in it is piped in
@@ -271,7 +272,7 @@ def main():
         "-e",
         "--escalate",
         action="store_true",
-        help="Speak to the manager (3.5 sonnet).",
+        help="Speak to the manager (gemini2.5).",
     )
     parser.add_argument("-m", "--model", type=str, help="Specify a model.")
     parser.add_argument("prompt", nargs="*", help="Ask IT a question.")
