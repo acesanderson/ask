@@ -8,27 +8,13 @@ Useful for me since I don't know Linux very well.
 
 from rich.console import Console
 
-console = Console(width=100)  # for spinner
+console = Console()  # for spinner
 
 with console.status("[green]Loading...", spinner="dots"):
-    from Chain import Model, MessageStore
+    from Chain import Model, MessageStore, ChainCache, Chain, Prompt, create_system_message, Response
     from pathlib import Path
     import platform, subprocess, sys, os, argparse
 
-# Constants + Message Store initialization
-# -----------------------------------------------------------------
-
-Model._console = console
-dir_path = Path(__file__).parent
-history_file_path = dir_path / ".ask_history.pkl"
-log_file_path = dir_path / ".ask_log.txt"
-cache_path = dir_path / ".cache.db"
-messagestore = MessageStore(
-    console=console,
-    history_file=history_file_path,
-    log_file=log_file_path,
-    pruning=True,
-)
 
 # Our prompts
 # -----------------------------------------------------------------
@@ -86,20 +72,6 @@ And here is the output of the first script that they are trying to debug:
 
 # Our functions
 # -----------------------------------------------------------------
-def load_Chain():
-    """
-    Lazy load the heavier elements of Chain package only if user has a question/debug.
-    """
-    global messagestore
-    global Chain, Model, Prompt, create_system_message, ChainCache
-    from Chain import Chain, Model, Prompt, create_system_message, ChainCache
-
-    # Assigning our singletons: Messagestore to Chain
-    Chain._message_store = messagestore
-    # Chain Cache to Model
-    Model._chain_cache = ChainCache(str(cache_path))
-    return Chain, Model, Prompt, create_system_message
-
 
 def get_system_info():
     os_info = platform.system() + " " + platform.release()
@@ -219,8 +191,20 @@ def generate_script_output(script_file: str) -> str:
 def main():
     preferred_model = "flash"
     # Load message store history.
+    Model._console = console
+    dir_path = Path(__file__).parent
+    history_file_path = dir_path / ".ask_history.json"
+    log_file_path = dir_path / ".ask_log.txt"
+    cache_path = dir_path / ".cache.db"
+    Model._chain_cache = ChainCache(str(cache_path))
+    messagestore = MessageStore(
+        console=console,
+        history_file=history_file_path,
+        log_file=log_file_path,
+        pruning=True,
+    )
     messagestore.load()
-    # Grab stdin in it is piped in
+    # Grab stdin if it is piped in
     if not sys.stdin.isatty():
         context = "\n\n" + "<context>" + sys.stdin.read() + "</context>"
     else:
@@ -256,15 +240,8 @@ def main():
         help="Clear the message history.",
     )
     parser.add_argument("-r", "--raw", action="store_true", help="Output raw markdown.")
-    # LLM options -- this will lazy load the Chain package.
-    parser.add_argument("-o", "--ollama", action="store_true", help="Use local model.")
-    parser.add_argument(
-        "-e",
-        "--escalate",
-        action="store_true",
-        help="Speak to the manager (gemini2.5).",
-    )
     parser.add_argument("-m", "--model", type=str, help="Specify a model.")
+    # LLM options -- this will lazy load the Chain package.
     parser.add_argument("prompt", nargs="*", help="Ask IT a question.")
     parser.add_argument("-d", "--debug", nargs="+", help="Debug mode.")
     parser.add_argument(
@@ -272,12 +249,7 @@ def main():
         "--query_about_script",
         help="Add a query about your script for debug mode.",
     )
-    # parser.add_argument("-t", "-tutorialize", dest="tutorialize", type=str, help="Generate a tutorial for a given topic.")
     args = parser.parse_args()
-    if args.ollama or args.model or args.debug or args.prompt:
-        Chain, Model, Prompt, create_system_message = load_Chain()
-    if args.ollama:
-        preferred_model = "llama3.1:latest"
     if args.model:
         try:
             Model(args.model)
@@ -285,8 +257,6 @@ def main():
         except:
             print(f"Model not recognized: {args.model}.")
             sys.exit()
-    if args.escalate:  # default is haiku, choose this is you need oomph
-        preferred_model = "gemini"
     if args.clear:
         messagestore.clear()
         sys.exit()
@@ -341,7 +311,7 @@ def main():
                     "file_data": file_data,
                     "script_output": script_output,
                 },
-                messages=messagestore.messages,
+                messages=messagestore,
             )
         if args.raw:
             print(response.content)
@@ -358,20 +328,24 @@ def main():
     #
     if combined_prompt.strip():  # ask the chatbot a question
         # Check if we need system prompt.
-        if messagestore.messages:
-            if messagestore.messages[0].role != "system":
+        if messagestore:
+            if messagestore[0].role != "system":
                 system_info = get_system_info()
                 system_message = create_system_message(
                     system_prompt=system_prompt_string,
                     input_variables={"system_info": system_info},
                 )
-                messagestore.messages = system_message + messagestore.messages
+                messagestore= system_message + messagestore
         # Initialize user prompt
         messagestore.add_new(role="user", content=combined_prompt)
         # Run our query with our messages.
         model = Model(preferred_model)
-        response = model.query(messagestore.messages)
-        messagestore.add_new(role="assistant", content=response)
+        response = model.query(messagestore)
+        if isinstance(response, Response):
+            messagestore.append(response.message)
+        elif isinstance(response, ChainError):
+            messagestore.query_failed()
+            return
         if args.raw:
             print(response)
         else:
