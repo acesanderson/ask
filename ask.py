@@ -11,7 +11,16 @@ from rich.console import Console
 console = Console()  # for spinner
 
 with console.status("[green]Loading...", spinner="dots"):
-    from Chain import Model, MessageStore, ChainCache, Chain, Prompt, create_system_message, Response
+    from Chain import (
+        Model,
+        MessageStore,
+        ChainCache,
+        Chain,
+        Prompt,
+        create_system_message,
+        Response,
+        ChainError,
+    )
     from pathlib import Path
     import platform, subprocess, sys, os, argparse
 
@@ -72,6 +81,7 @@ And here is the output of the first script that they are trying to debug:
 
 # Our functions
 # -----------------------------------------------------------------
+
 
 def get_system_info():
     os_info = platform.system() + " " + platform.release()
@@ -335,7 +345,7 @@ def main():
                     system_prompt=system_prompt_string,
                     input_variables={"system_info": system_info},
                 )
-                messagestore= system_message + messagestore
+                messagestore = system_message + messagestore
         # Initialize user prompt
         messagestore.add_new(role="user", content=combined_prompt)
         # Run our query with our messages.
