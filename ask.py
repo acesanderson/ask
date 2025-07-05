@@ -11,7 +11,7 @@ from rich.console import Console
 console = Console()  # for spinner
 
 with console.status("[green]Loading...", spinner="dots"):
-    from Chain import Model, MessageStore, ChainCache, Chain, Prompt, create_system_message, Response
+    from Chain import Model, MessageStore, ChainCache, Chain, Prompt, create_system_message, Response, ChainError
     from pathlib import Path
     import platform, subprocess, sys, os, argparse
 
@@ -203,6 +203,7 @@ def main():
         log_file=log_file_path,
         pruning=True,
     )
+    Chain._message_store = messagestore
     messagestore.load()
     # Grab stdin if it is piped in
     if not sys.stdin.isatty():
@@ -335,16 +336,11 @@ def main():
                 input_variables={"system_info": system_info},
             )
             messagestore.insert(0, system_message[0])
-        # Initialize user prompt
-        messagestore.add_new(role="user", content=combined_prompt)
         # Run our query with our messages.
         model = Model(preferred_model)
-        response = model.query(messagestore)
-        if isinstance(response, Response):
-            messagestore.append(response.message)
-        elif isinstance(response, ChainError):
-            messagestore.query_failed()
-            return
+        prompt = Prompt(combined_prompt)
+        chain = Chain(prompt = prompt, model = model)
+        response = chain.run()
         if args.raw:
             print(response)
         else:
