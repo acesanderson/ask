@@ -338,14 +338,13 @@ def main():
     #
     if combined_prompt.strip():  # ask the chatbot a question
         # Check if we need system prompt.
-        if messagestore:
-            if messagestore[0].role != "system":
-                system_info = get_system_info()
-                system_message = create_system_message(
-                    system_prompt=system_prompt_string,
-                    input_variables={"system_info": system_info},
-                )
-                messagestore = system_message + messagestore
+        if len(messagestore) == 0 or messagestore[0].role != "system":
+            system_info = get_system_info()
+            system_message = create_system_message(
+                system_prompt=system_prompt_string,
+                input_variables={"system_info": system_info},
+            )
+            messagestore.insert(0, system_message[0])
         # Initialize user prompt
         messagestore.add_new(role="user", content=combined_prompt)
         # Run our query with our messages.
