@@ -12,18 +12,32 @@ console = Console()  # for spinner
 
 with console.status("[green]Loading...", spinner="dots"):
     from Chain import (
+        Chain,
         Model,
         MessageStore,
         ChainCache,
-        Chain,
         Prompt,
         create_system_message,
-        Response,
-        ChainError,
     )
     from pathlib import Path
     import platform, subprocess, sys, os, argparse
 
+# Constants + Message Store initialization
+# -----------------------------------------------------------------
+
+Model._console = console
+dir_path = Path(__file__).parent
+history_file_path = dir_path / ".ask_history.pkl"
+log_file_path = dir_path / ".ask_log.txt"
+cache_path = dir_path / ".cache.db"
+Model._chain_cache = ChainCache(db_path=str(cache_path))
+messagestore = MessageStore(
+    console=console,
+    history_file=history_file_path,
+    log_file=log_file_path,
+    pruning=True,
+)
+Chain._message_store = messagestore
 
 # Our prompts
 # -----------------------------------------------------------------
@@ -349,7 +363,7 @@ def main():
         # Run our query with our messages.
         model = Model(preferred_model)
         prompt = Prompt(combined_prompt)
-        chain = Chain(prompt = prompt, model = model)
+        chain = Chain(prompt=prompt, model=model)
         response = chain.run()
         if args.raw:
             print(response)
