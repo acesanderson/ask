@@ -9,6 +9,8 @@ description = "A helpful system administrator."
 requires-python = ">=3.12,<3.13.4"
 dependencies = [
     "anthropic>=0.57.1",
+    "database-clients",
+    "google-genai>=1.36.0",
     "instructor>=1.9.0",
     "jinja2>=3.1.6",
     "loadenv>=0.1.1",
@@ -17,6 +19,7 @@ dependencies = [
     "pydantic>=2.11.7",
     "python-dotenv>=1.1.1",
     "rich>=14.0.0",
+    "tiktoken>=0.11.0",
     "tinydb>=4.8.2",
 ]
 
@@ -27,4 +30,7 @@ ask = "ask:main"
 addopts = "-v -s --tb=short --no-header --showlocals --pdb -x"
 log_cli = true
 log_cli_level = "INFO"
+
+[tool.uv.sources]
+database-clients = { path = "../database-clients", editable = true }
 
