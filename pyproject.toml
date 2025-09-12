@@ -14,9 +14,11 @@ dependencies = [
     "loadenv>=0.1.1",
     "openai>=1.93.0",
     "pillow>=11.3.0",
+    "psycopg2-binary>=2.9.10",
     "pydantic>=2.11.7",
     "python-dotenv>=1.1.1",
     "rich>=14.0.0",
+    "tiktoken>=0.9.0",
     "tinydb>=4.8.2",
 ]
 
