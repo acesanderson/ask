@@ -7,13 +7,14 @@ from pathlib import Path
 import sys
 
 PREFERRED_MODEL = "haiku"
-VERBOSITY = Verbosity.COMPLETE
+VERBOSITY = Verbosity.PROGRESS
 CACHE_PATH = Path(__file__).parent / ".cache.db"
+console = Console()
 
 
 class Ask:
     def __init__(self):
-        self.console = Console()
+        self.console = console
         # Flags
         self.preferred_model = PREFERRED_MODEL
         # Control flow
@@ -84,10 +85,11 @@ class Ask:
         """
         Process the arguments and execute the query.
         """
-        args = parser.parse_args()
-        query_input = self._coerce_query_input(args.query)
-        self.preferred_model = args.model or self.preferred_model
-        response = self.query(query_input)
+        with console.status("[bold cyan]Querying...", spinner="dots"):
+            args = parser.parse_args()
+            query_input = self._coerce_query_input(args.query)
+            self.preferred_model = args.model or self.preferred_model
+            response = self.query(query_input)
         if args.raw:
             print(response)
         else:
