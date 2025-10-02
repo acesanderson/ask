@@ -1,6 +1,7 @@
 from ask.system_info import get_system_info
 from conduit.prompt.prompt_loader import PromptLoader
 from conduit.progress.verbosity import Verbosity
+from conduit.message.messagestore import MessageStore
 from argparse import ArgumentParser
 from rich.console import Console
 from pathlib import Path
@@ -9,6 +10,8 @@ import sys
 PREFERRED_MODEL = "haiku"
 VERBOSITY = Verbosity.PROGRESS
 CACHE_PATH = Path(__file__).parent / ".cache.db"
+HISTORY_FILE = Path(__file__).parent / ".ask_history.json"
+MESSAGE_STORE = MessageStore(history_file=HISTORY_FILE, pruning=True)
 console = Console()
 
 
@@ -105,15 +108,16 @@ class Ask:
 
         Model._console = self.console
         Model._conduit_cache = ConduitCache(CACHE_PATH)
+        Conduit._message_store = MESSAGE_STORE
 
         # Set up system prompt
         self.system_prompt = self._load_system_prompt()
         system_message = create_system_message(self.system_prompt)
-        messages = system_message
+        MESSAGE_STORE.append(system_message[0])
         prompt = Prompt(query_input)
         model = Model(self.preferred_model)
         conduit = Conduit(model=model, prompt=prompt)
-        response = conduit.run(messages=messages, verbose=VERBOSITY)
+        response = conduit.run(verbose=VERBOSITY)
         return response
 
 
