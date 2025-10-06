@@ -148,20 +148,6 @@ Terminal: {terminal}
     return system_info
 
 
-def read_file_content(file_path):
-    """
-    Reads the content of a file and returns it as a string.
-    Needed for reading shell configuration files for base mode.
-    """
-    try:
-        with open(file_path, "r") as file:
-            return f"{file_path} Content:\n{file.read()}"
-    except FileNotFoundError:
-        return f"{file_path} Content: File not found"
-    except Exception as e:
-        return f"Error reading file: {e}"
-
-
 def print_markdown(string_to_display: str, console: Console | None = None):
     """
     Prints formatted markdown to the console.
