@@ -4,7 +4,7 @@ This is a customization of Twig's CLI tool to create a specialized assistant for
 Still needs work, and solutions we develop here (particularly re: system prompts) should be migrated upstream to Twig.
 """
 
-from twig.twig_cli import Twig, Verbosity
+from twig.twig_class import Twig, Verbosity
 from twig.handlers import Conduit, Prompt, Model, Response
 from ask.system_info import get_system_info
 from conduit.prompt.prompt_loader import PromptLoader
