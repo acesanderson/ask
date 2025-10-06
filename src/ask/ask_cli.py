@@ -27,7 +27,7 @@ def query_function(
     """
 
     # Unpack inputs dictionary
-    query_input = inputs.get("query", "")
+    query_input = inputs.get("query_input", "")
     context = inputs.get("context", "")
     append = inputs.get("append", "")
 
