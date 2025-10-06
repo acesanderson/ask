@@ -1,4 +1,7 @@
 from ask.system_info import get_system_info
+from conduit.sync import Prompt, Model, Conduit
+from conduit.message.textmessage import create_system_message
+from conduit.cache.cache import ConduitCache
 from conduit.prompt.prompt_loader import PromptLoader
 from conduit.progress.verbosity import Verbosity
 from conduit.message.messagestore import MessageStore
@@ -14,6 +17,10 @@ HISTORY_FILE = Path(__file__).parent / ".ask_history.json"
 MESSAGE_STORE = MessageStore(history_file=HISTORY_FILE, pruning=True)
 console = Console()
 
+Model._console = console
+Model._conduit_cache = ConduitCache(CACHE_PATH)
+Conduit._message_store = MESSAGE_STORE
+
 
 class Ask:
     def __init__(self):
@@ -23,6 +30,12 @@ class Ask:
         # Control flow
         self.parser = self._setup_parser()
         self._process_args(self.parser)
+
+    def _print_markdown(self, text: str):
+        from rich.markdown import Markdown
+
+        markdown = Markdown(text)
+        self.console.print(markdown)
 
     def _load_system_prompt(self):
         from pathlib import Path
@@ -82,14 +95,28 @@ class Ask:
             action="store_true",
             help="Output raw response without any formatting.",
         )
+        parser.add_argument(
+            "-l", "--last", action="store_true", help="Output last response."
+        )
         return parser
 
     def _process_args(self, parser: ArgumentParser):
         """
         Process the arguments and execute the query.
         """
+        args = parser.parse_args()
+        # Archival
+        if args.last:
+            assert Conduit._message_store, "No message store found."
+            last_message = Conduit._message_store.last()
+            if not last_message:
+                self.console.print("[bold red]No last message found.[/bold red]")
+                sys.exit(1)
+            else:
+                self._print_markdown(last_message.content)
+                sys.exit(0)
+        # Query
         with console.status("[bold cyan]Querying...", spinner="dots"):
-            args = parser.parse_args()
             query_input = self._coerce_query_input(args.query)
             self.preferred_model = args.model or self.preferred_model
             response = self.query(query_input)
@@ -102,14 +129,7 @@ class Ask:
             self.console.print(markdown)
 
     def query(self, query_input: str):
-        from conduit.sync import Prompt, Model, Conduit
-        from conduit.message.textmessage import create_system_message
-        from conduit.cache.cache import ConduitCache
-
-        Model._console = self.console
-        Model._conduit_cache = ConduitCache(CACHE_PATH)
-        Conduit._message_store = MESSAGE_STORE
-
+        assert Conduit._message_store, "No message store found."
         # Set up system prompt
         self.system_prompt = self._load_system_prompt()
         system_message = create_system_message(self.system_prompt)
