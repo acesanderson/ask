@@ -311,6 +311,7 @@ dependencies = [
     { name = "pymongo" },
     { name = "pytest" },
     { name = "requests" },
+    { name = "rich" },
 ]
 
 [package.metadata]
@@ -320,6 +321,7 @@ requires-dist = [
     { name = "pymongo", specifier = ">=4.14.1" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "requests", specifier = ">=2.32.5" },
+    { name = "rich" },
 ]
 
 [[package]]
@@ -1520,6 +1522,7 @@ name = "twig"
 version = "1.5"
 source = { editable = "../twig-project" }
 dependencies = [
+    { name = "click" },
     { name = "conduit" },
     { name = "pillow" },
     { name = "rich" },
@@ -1527,6 +1530,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "click", specifier = ">=8.3.0" },
     { name = "conduit", editable = "../conduit-project" },
     { name = "pillow" },
     { name = "rich" },

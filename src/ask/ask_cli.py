@@ -1,30 +1,43 @@
+"""
+This is a customization of Twig's CLI tool to create a specialized assistant for IT administration tasks.
+
+Still needs work, and solutions we develop here (particularly re: system prompts) should be migrated upstream to Twig.
+"""
+
+from twig.twig_cli import Twig, Verbosity
+from twig.handlers import Conduit, Prompt, Model, Response
 from ask.system_info import get_system_info
 from conduit.prompt.prompt_loader import PromptLoader
-from conduit.progress.verbosity import Verbosity
-from conduit.message.messagestore import MessageStore
-from argparse import ArgumentParser
-from rich.console import Console
-from pathlib import Path
-import sys
+from conduit.message.textmessage import create_system_message
 
-PREFERRED_MODEL = "haiku"
+# Configs
+PREFERRED_MODEL = "claude"
+DESCRIPTION = "Your friendly IT administrator."
 VERBOSITY = Verbosity.PROGRESS
-CACHE_PATH = Path(__file__).parent / ".cache.db"
-HISTORY_FILE = Path(__file__).parent / ".ask_history.json"
-MESSAGE_STORE = MessageStore(history_file=HISTORY_FILE, pruning=True)
-console = Console()
 
 
-class Ask:
-    def __init__(self):
-        self.console = console
-        # Flags
-        self.preferred_model = PREFERRED_MODEL
-        # Control flow
-        self.parser = self._setup_parser()
-        self._process_args(self.parser)
+def query_function(
+    inputs: dict[str, str],
+    preferred_model: str,
+    nopersist: bool,
+    verbose: Verbosity,
+) -> Response:
+    """
+    Load our system prompt from the prompts directory and set up the Conduit with the provided input.
+    """
 
-    def _load_system_prompt(self):
+    # Unpack inputs dictionary
+    query_input = inputs.get("query", "")
+    context = inputs.get("context", "")
+    append = inputs.get("append", "")
+
+    # Generate combined query
+    combined_query = "\n\n".join(
+        [query_input, f"<context>\n{context}\n</context>" if context else "", append]
+    ).strip()
+
+    # Load system prompt from file
+    def _load_system_prompt() -> str:
         from pathlib import Path
 
         dir_path = Path(__file__).parent
@@ -32,97 +45,45 @@ class Ask:
 
         prompt_loader = PromptLoader(prompts_dir)
         system_prompt = prompt_loader["system_prompt"]
+
         system_info = get_system_info()
-        system_prompt = system_prompt.render(
+        system_prompt_str = system_prompt.render(
             input_variables={"system_info": system_info}
         )
-        return system_prompt
+        return system_prompt_str
 
-    def _get_stdin(self) -> str:
+    def _insert_system_prompt(system_prompt_str: str) -> None:
         """
-        Get implicit context from clipboard or other sources.
+        Insert system prompt into message store if not already present.
         """
-        context = sys.stdin.read() if not sys.stdin.isatty() else ""
-        return context
 
-    def _coerce_query_input(self, query_input: str | list) -> str:
-        """
-        Coerce query input to a string.
-        If input is a list, join with spaces.
-        """
-        if not query_input:
-            self.console.print("[bold red]No query provided.[/bold red]")
-            sys.exit(1)
-        elif isinstance(query_input, list):
-            coerced_query_input = " ".join(query_input)
-        elif isinstance(query_input, str):
-            coerced_query_input = query_input
-        return coerced_query_input
+        if not Conduit._message_store:
+            raise ValueError("No message store found.")
+        if not Conduit._message_store.system_message:
+            system_message = create_system_message(system_prompt_str)
+            Conduit._message_store.append(system_message[0])
 
-    def _setup_parser(self) -> ArgumentParser:
-        """
-        Setup the argument parser based on the configuration.
-        """
-        parser = ArgumentParser()
-        parser.add_argument(
-            "query",
-            nargs="*",
-            help="The query to ask the AI. If not provided, reads from stdin.",
-        )
-        parser.add_argument(
-            "-m",
-            "--model",
-            type=str,
-            default=self.preferred_model,
-            help="The model to use for the query.",
-        )
-        parser.add_argument(
-            "-r",
-            "--raw",
-            action="store_true",
-            help="Output raw response without any formatting.",
-        )
-        return parser
-
-    def _process_args(self, parser: ArgumentParser):
-        """
-        Process the arguments and execute the query.
-        """
-        with console.status("[bold cyan]Querying...", spinner="dots"):
-            args = parser.parse_args()
-            query_input = self._coerce_query_input(args.query)
-            self.preferred_model = args.model or self.preferred_model
-            response = self.query(query_input)
-        if args.raw:
-            print(response)
-        else:
-            from rich.markdown import Markdown
-
-            markdown = Markdown(str(response.content))
-            self.console.print(markdown)
-
-    def query(self, query_input: str):
-        from conduit.sync import Prompt, Model, Conduit
-        from conduit.message.textmessage import create_system_message
-        from conduit.cache.cache import ConduitCache
-
-        Model._console = self.console
-        Model._conduit_cache = ConduitCache(CACHE_PATH)
-        Conduit._message_store = MESSAGE_STORE
-
-        # Set up system prompt
-        self.system_prompt = self._load_system_prompt()
-        system_message = create_system_message(self.system_prompt)
-        MESSAGE_STORE.append(system_message[0])
-        prompt = Prompt(query_input)
-        model = Model(self.preferred_model)
-        conduit = Conduit(model=model, prompt=prompt)
-        response = conduit.run(verbose=VERBOSITY)
-        return response
+    # Set up system prompt
+    assert Conduit._message_store, "No message store found."
+    system_prompt: str = _load_system_prompt()
+    _insert_system_prompt(system_prompt)
+    # Run our query
+    prompt = Prompt(combined_query)
+    model = Model(PREFERRED_MODEL)
+    conduit = Conduit(model=model, prompt=prompt)
+    response = conduit.run(verbose=VERBOSITY)
+    assert isinstance(response, Response), "Response is not of type Response"
+    return response
 
 
 def main():
-    Ask()
+    ask = Twig(
+        query_function=query_function,
+        verbosity=VERBOSITY,
+        description="Ask questions to the AI model with context.",
+        preferred_model=PREFERRED_MODEL,
+    )
+    ask.run()
 
 
 if __name__ == "__main__":
