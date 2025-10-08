@@ -11,6 +11,11 @@ dependencies = [
     "twig"
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/ask"]
+sources = ["src"]
+include = ["src/ask/py.typed"]
+
 [tool.pytest.ini_options]
 addopts = "-v -s --tb=short --no-header --showlocals --pdb -x"
 log_cli = true
